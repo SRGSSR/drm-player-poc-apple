@@ -1,14 +1,17 @@
-//
-//  DRMPlayerApp.swift
-//  DRMPlayer
-//
-//  Created by Samuel Défago on 26.07.2025.
-//
-
+import AVFoundation
 import SwiftUI
+
+private final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        try? AVAudioSession.sharedInstance().setCategory(.playback)
+        return true
+    }
+}
 
 @main
 struct DRMPlayerApp: App {
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
+
     var body: some Scene {
         WindowGroup {
             ContentView()
