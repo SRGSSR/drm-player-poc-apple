@@ -11,7 +11,9 @@ struct PlayerView: View {
         VideoPlayer(player: player)
             .ignoresSafeArea()
             .onAppear {
-                player.replaceCurrentItem(with: .init(url: media.url))
+                let asset = AVURLAsset(url: media.url)
+                ContentKeySessionManager.shared.addContentKeyRecipient(asset)
+                player.replaceCurrentItem(with: .init(asset: asset))
                 player.play()
             }
     }
