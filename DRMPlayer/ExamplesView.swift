@@ -1,3 +1,5 @@
+import AVFoundation
+import Combine
 import LocalConsole
 import SwiftUI
 
@@ -26,14 +28,6 @@ struct ExamplesView: View {
     ]
 
     @State private var selectedMedia: Media?
-    @State private var startDate = Date()
-
-    private static let dateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        dateFormatter.timeStyle = .short
-        return dateFormatter
-    }()
 
     var body: some View {
         List(medias, id: \.self) { media in
@@ -47,8 +41,7 @@ struct ExamplesView: View {
             PlayerView(media: media)
         }
         .safeAreaInset(edge: .bottom) {
-            Text("App start: \(Self.dateFormatter.string(from: startDate))")
-                .padding()
+            StatusView()
         }
         .toolbar {
             ToolbarItem {
