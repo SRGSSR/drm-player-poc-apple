@@ -1,6 +1,5 @@
 import AVFoundation
 import LocalConsole
-import os
 
 final class ContentKeySessionManager: NSObject {
     static let shared = ContentKeySessionManager(
@@ -11,7 +10,6 @@ final class ContentKeySessionManager: NSObject {
     private let contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
     private let session = URLSession(configuration: .default)
     private let queue = DispatchQueue(label: "ch.defagos.drmplayer.session-manager")
-    private let logger = Logger(subsystem: "ch.defagos.drmplayer", category: "SessionManager")
 
     private init(certificateUrl: URL) {
         self.certificateUrl = certificateUrl
@@ -21,13 +19,11 @@ final class ContentKeySessionManager: NSObject {
 }
 
 extension ContentKeySessionManager: AVContentKeySessionDelegate {
-    private static func contentIdentifier(from keyRequest: AVContentKeyRequest) -> Data? {
-        guard let identifier = keyRequest.identifier as? String,
-              let components = URLComponents(string: identifier),
-              let contentIdentifier = components.queryItems?.first(where: { $0.name == "contentId" })?.value else {
+    private static func contentIdentifier(from keyRequest: AVContentKeyRequest) -> String? {
+        guard let identifier = keyRequest.identifier as? String, let components = URLComponents(string: identifier) else {
             return nil
         }
-        return Data(contentIdentifier.utf8)
+        return components.queryItems?.first(where: { $0.name == "contentId" })?.value
     }
 
     private static func contentKeyContextRequest(from identifier: Any?, httpBody: Data) -> URLRequest? {
@@ -55,7 +51,12 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
     }
 
     private func contentKeyRequest(keyRequest: AVContentKeyRequest, app: Data) async throws -> Data {
-        try await keyRequest.makeStreamingContentKeyRequestData(forApp: app, contentIdentifier: Self.contentIdentifier(from: keyRequest))
+        guard let contentIdentifier = Self.contentIdentifier(from: keyRequest) else {
+            throw DRMError.missingIdentifier
+        }
+
+        let data = try await keyRequest.makeStreamingContentKeyRequestData(forApp: app, contentIdentifier: Data(contentIdentifier.utf8))
+        return data
     }
 
     private func contentKeyContext(keyRequest: AVContentKeyRequest, data: Data) async throws -> Data {
@@ -68,44 +69,43 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
         return try await session.data(for: contentKeyContextRequest).0
     }
 
-    private func contentKeyContext(keyRequest: AVContentKeyRequest) async throws -> Data {
+    private func contentKeyContext(keyRequest: AVContentKeyRequest, isRenewing: Bool) async throws -> Data {
+        await LCManager.shared.print("---------------------------")
+        await LCManager.shared.print("Start for \(String(describing: keyRequest.identifier)), renewing = \(isRenewing)")
         let app = try await appCertificate()
+        await LCManager.shared.print("Successfully retrieved app certificate")
         let data = try await contentKeyRequest(keyRequest: keyRequest, app: app)
-        return try await contentKeyContext(keyRequest: keyRequest, data: data)
+        await LCManager.shared.print("Successfully generated SPC")
+        let responseData = try await contentKeyContext(keyRequest: keyRequest, data: data)
+        await LCManager.shared.print("Successfully retrieved CKC")
+        return responseData
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
-        LCManager.shared.print("Did provide key request \(String(describing: keyRequest.identifier))")
-        logger.info("Did provide key request \(String(describing: keyRequest.identifier))")
-
-        contentKeySession(session, process: keyRequest)
+        contentKeySession(session, process: keyRequest, isRenewing: false)
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvideRenewingContentKeyRequest keyRequest: AVContentKeyRequest) {
-        LCManager.shared.print("Did provide renewing key request \(String(describing: keyRequest.identifier))")
-        logger.info("Did provide renewing key request \(String(describing: keyRequest.identifier))")
-
-        contentKeySession(session, process: keyRequest)
+        contentKeySession(session, process: keyRequest, isRenewing: true)
     }
 
     func contentKeySession(_ session: AVContentKeySession, contentKeyRequestDidSucceed keyRequest: AVContentKeyRequest) {
-        LCManager.shared.print("Content key request did succeeed")
-        logger.info("Content key request did succeeed")
+        LCManager.shared.print("Content key request \(String(describing: keyRequest.identifier)) did succeed")
     }
 
     func contentKeySession(_ session: AVContentKeySession, contentKeyRequest keyRequest: AVContentKeyRequest, didFailWithError err: any Error) {
-        LCManager.shared.print("Content key request did fail with error \(err)")
-        logger.info("Content key request did fail with error \(err)")
+        LCManager.shared.print("Content key request \(String(describing: keyRequest.identifier)) did fail with error \(err)")
     }
 
-    private func contentKeySession(_ session: AVContentKeySession, process keyRequest: AVContentKeyRequest) {
+    private func contentKeySession(_ session: AVContentKeySession, process keyRequest: AVContentKeyRequest, isRenewing: Bool) {
         Task {
             do {
-                let data = try await contentKeyContext(keyRequest: keyRequest)
+                let data = try await contentKeyContext(keyRequest: keyRequest, isRenewing: isRenewing)
                 let response = AVContentKeyResponse(fairPlayStreamingKeyResponseData: data)
                 keyRequest.processContentKeyResponse(response)
             }
             catch {
+                await LCManager.shared.print("Failed with error \(error)")
                 keyRequest.processContentKeyResponseError(error)
             }
         }
