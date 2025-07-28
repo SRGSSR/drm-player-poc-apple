@@ -1,3 +1,4 @@
+import LocalConsole
 import SwiftUI
 
 struct ExamplesView: View {
@@ -48,6 +49,15 @@ struct ExamplesView: View {
         .safeAreaInset(edge: .bottom) {
             Text("App start: \(Self.dateFormatter.string(from: startDate))")
                 .padding()
+        }
+        .toolbar {
+            ToolbarItem {
+                Button {
+                    LCManager.shared.isVisible.toggle()
+                } label: {
+                    Image(systemName: "apple.terminal")
+                }
+            }
         }
         .navigationTitle("Examples")
     }

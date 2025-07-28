@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6F92DF4A2E3750A800F9CEC6 /* LocalConsole in Frameworks */ = {isa = PBXBuildFile; productRef = 6F92DF492E3750A800F9CEC6 /* LocalConsole */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		6FED621F2E34CFE40081A8C7 /* DRMPlayer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DRMPlayer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6F92DF4A2E3750A800F9CEC6 /* LocalConsole in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = DRMPlayer;
 			packageProductDependencies = (
+				6F92DF492E3750A800F9CEC6 /* LocalConsole */,
 			);
 			productName = DRMPlayer;
 			productReference = 6FED621F2E34CFE40081A8C7 /* DRMPlayer.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 6FED62162E34CFE40081A8C7;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6F92DF482E3750A800F9CEC6 /* XCRemoteSwiftPackageReference "LocalConsole" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6FED62202E34CFE40081A8C7 /* Products */;
 			projectDirPath = "";
@@ -324,6 +333,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6F92DF482E3750A800F9CEC6 /* XCRemoteSwiftPackageReference "LocalConsole" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/adamcichy/LocalConsole.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6F92DF492E3750A800F9CEC6 /* LocalConsole */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6F92DF482E3750A800F9CEC6 /* XCRemoteSwiftPackageReference "LocalConsole" */;
+			productName = LocalConsole;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6FED62172E34CFE40081A8C7 /* Project object */;
 }

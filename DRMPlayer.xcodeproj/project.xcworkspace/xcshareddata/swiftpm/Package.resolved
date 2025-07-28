@@ -1,0 +1,15 @@
+{
+  "originHash" : "cbe6c932cda9e8b5e3bfb4b33505dfdc5005e75b313c28f540dcd1eb003c5bb4",
+  "pins" : [
+    {
+      "identity" : "localconsole",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/adamcichy/LocalConsole.git",
+      "state" : {
+        "revision" : "8cce883a23c045c7e885eb33be26273142671d62",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}

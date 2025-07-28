@@ -1,4 +1,5 @@
 import AVFoundation
+import LocalConsole
 import os
 
 final class ContentKeySessionManager: NSObject {
@@ -74,18 +75,26 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
+        LCManager.shared.print("Did provide key request \(String(describing: keyRequest.identifier))")
+        logger.info("Did provide key request \(String(describing: keyRequest.identifier))")
+
         contentKeySession(session, process: keyRequest)
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvideRenewingContentKeyRequest keyRequest: AVContentKeyRequest) {
+        LCManager.shared.print("Did provide renewing key request \(String(describing: keyRequest.identifier))")
+        logger.info("Did provide renewing key request \(String(describing: keyRequest.identifier))")
+
         contentKeySession(session, process: keyRequest)
     }
 
     func contentKeySession(_ session: AVContentKeySession, contentKeyRequestDidSucceed keyRequest: AVContentKeyRequest) {
+        LCManager.shared.print("Content key request did succeeed")
         logger.info("Content key request did succeeed")
     }
 
     func contentKeySession(_ session: AVContentKeySession, contentKeyRequest keyRequest: AVContentKeyRequest, didFailWithError err: any Error) {
+        LCManager.shared.print("Content key request did fail with error \(err)")
         logger.info("Content key request did fail with error \(err)")
     }
 
