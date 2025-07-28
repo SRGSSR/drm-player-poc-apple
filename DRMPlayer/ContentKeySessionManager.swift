@@ -49,56 +49,28 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
         contentKeySession.addContentKeyRecipient(recipient)
     }
 
-    private func appCertificate(completion: @escaping (Result<Data, Error>) -> Void) {
-        session.dataTask(with: certificateUrl) { data, _, error in
-            if let error {
-                completion(.failure(error))
-            }
-            else if let data {
-                completion(.success(data))
-            }
-        }.resume()
+    private func appCertificate() async throws -> Data {
+        try await session.data(from: certificateUrl).0
     }
 
-    private func contentKeyRequest(keyRequest: AVContentKeyRequest, app: Data, completion: @escaping (Result<Data, Error>) -> Void) {
-        keyRequest.makeStreamingContentKeyRequestData(forApp: app, contentIdentifier: Self.contentIdentifier(from: keyRequest)) { data, error in
-            if let error {
-                completion(.failure(error))
-            }
-            else if let data {
-                completion(.success(data))
-            }
-        }
+    private func contentKeyRequest(keyRequest: AVContentKeyRequest, app: Data) async throws -> Data {
+        try await keyRequest.makeStreamingContentKeyRequestData(forApp: app, contentIdentifier: Self.contentIdentifier(from: keyRequest))
     }
 
-    private func contentKeyContext(keyRequest: AVContentKeyRequest, data: Data, completion: @escaping (Result<Data, Error>) -> Void) {
+    private func contentKeyContext(keyRequest: AVContentKeyRequest, data: Data) async throws -> Data {
         guard let contentKeyContextRequest = Self.contentKeyContextRequest(
             from: keyRequest.identifier,
             httpBody: data
         ) else {
-            completion(.failure(DRMError.missingContentKeyContext))
-            return
+            throw DRMError.missingContentKeyContext
         }
-        session.data(with: contentKeyContextRequest, completion: completion)
-            .resume()
+        return try await session.data(for: contentKeyContextRequest).0
     }
 
-    private func contentKeyContext(keyRequest: AVContentKeyRequest, completion: @escaping (Result<Data, Error>) -> Void) {
-        appCertificate { result in
-            switch result {
-            case let .success(app):
-                self.contentKeyRequest(keyRequest: keyRequest, app: app) { result in
-                    switch result {
-                    case let .success(data):
-                        self.contentKeyContext(keyRequest: keyRequest, data: data, completion: completion)
-                    case .failure:
-                        completion(result)
-                    }
-                }
-            case .failure:
-                completion(result)
-            }
-        }
+    private func contentKeyContext(keyRequest: AVContentKeyRequest) async throws -> Data {
+        let app = try await appCertificate()
+        let data = try await contentKeyRequest(keyRequest: keyRequest, app: app)
+        return try await contentKeyContext(keyRequest: keyRequest, data: data)
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
@@ -118,15 +90,14 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
     }
 
     private func contentKeySession(_ session: AVContentKeySession, process keyRequest: AVContentKeyRequest) {
-        contentKeyContext(keyRequest: keyRequest) { result in
-            self.queue.async {
-                switch result {
-                case let .success(data):
-                    let response = AVContentKeyResponse(fairPlayStreamingKeyResponseData: data)
-                    keyRequest.processContentKeyResponse(response)
-                case let .failure(error):
-                    keyRequest.processContentKeyResponseError(error)
-                }
+        Task {
+            do {
+                let data = try await contentKeyContext(keyRequest: keyRequest)
+                let response = AVContentKeyResponse(fairPlayStreamingKeyResponseData: data)
+                keyRequest.processContentKeyResponse(response)
+            }
+            catch {
+                keyRequest.processContentKeyResponseError(error)
             }
         }
     }
