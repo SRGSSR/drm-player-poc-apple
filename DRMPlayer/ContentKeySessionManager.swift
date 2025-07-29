@@ -69,9 +69,9 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
         return try await session.data(for: contentKeyContextRequest).0
     }
 
-    private func contentKeyContext(keyRequest: AVContentKeyRequest, isRenewing: Bool) async throws -> Data {
+    private func contentKeyContext(keyRequest: AVContentKeyRequest) async throws -> Data {
         await LCManager.shared.print("---------------------------")
-        await LCManager.shared.print("Start for \(String(describing: keyRequest.identifier)), renewing = \(isRenewing)")
+        await LCManager.shared.print("Start for \(String(describing: keyRequest.identifier))")
         let app = try await appCertificate()
         await LCManager.shared.print("Successfully retrieved app certificate")
         let data = try await contentKeyRequest(keyRequest: keyRequest, app: app)
@@ -82,11 +82,11 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
-        contentKeySession(session, process: keyRequest, isRenewing: false)
+        contentKeySession(session, process: keyRequest)
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvideRenewingContentKeyRequest keyRequest: AVContentKeyRequest) {
-        contentKeySession(session, process: keyRequest, isRenewing: true)
+        contentKeySession(session, process: keyRequest)
     }
 
     func contentKeySession(_ session: AVContentKeySession, contentKeyRequestDidSucceed keyRequest: AVContentKeyRequest) {
@@ -97,10 +97,10 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
         LCManager.shared.print("Content key request \(String(describing: keyRequest.identifier)) did fail with error \(err)")
     }
 
-    private func contentKeySession(_ session: AVContentKeySession, process keyRequest: AVContentKeyRequest, isRenewing: Bool) {
+    private func contentKeySession(_ session: AVContentKeySession, process keyRequest: AVContentKeyRequest) {
         Task {
             do {
-                let data = try await contentKeyContext(keyRequest: keyRequest, isRenewing: isRenewing)
+                let data = try await contentKeyContext(keyRequest: keyRequest)
                 let response = AVContentKeyResponse(fairPlayStreamingKeyResponseData: data)
                 keyRequest.processContentKeyResponse(response)
             }
