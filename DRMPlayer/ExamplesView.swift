@@ -19,7 +19,7 @@ struct ExamplesView: View {
         ),
         .init(
             title: "Demain nous appartient (RTS)",
-            url: URL(string: "https://rtsvod-drm-b.akamaized.net/out/v1/47659c60b71d4538832abffd88317418/d25c9142a02b42eda81c1f4735f55700/0fe61b84421d48a298f572c80b135afb/index.m3u8?sdh=true")!
+            url: URL(string: "https://rtsvod-drm-b.akamaized.net/out/v1/03018a5a71c345a1bdaffa55230fa35d/d25c9142a02b42eda81c1f4735f55700/0fe61b84421d48a298f572c80b135afb/index.m3u8?sdh=true")!
         ),
         .init(
             title: "Grey's Anatomy (SRF)",
