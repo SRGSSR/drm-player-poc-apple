@@ -70,8 +70,6 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
     }
 
     private func contentKeyContext(keyRequest: AVContentKeyRequest) async throws -> Data {
-        await LCManager.shared.print("---------------------------")
-        await LCManager.shared.print("Start for \(String(describing: keyRequest.identifier))")
         let app = try await appCertificate()
         await LCManager.shared.print("Successfully retrieved app certificate")
         let data = try await contentKeyRequest(keyRequest: keyRequest, app: app)
@@ -81,11 +79,28 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
         return responseData
     }
 
+    func contentKeySession(
+        _ session: AVContentKeySession,
+        shouldRetry keyRequest: AVContentKeyRequest,
+        reason retryReason: AVContentKeyRequest.RetryReason
+    ) -> Bool {
+        switch retryReason {
+        case .receivedObsoleteContentKey, .receivedResponseWithExpiredLease, .timedOut:
+            LCManager.shared.print("Content key is retried for key request \(String(describing: keyRequest.identifier)), reason: \(retryReason)")
+            return true
+        default:
+            LCManager.shared.print("Content key is NOT retried for key request \(String(describing: keyRequest.identifier)), reason: \(retryReason)")
+            return false
+        }
+    }
+
     func contentKeySession(_ session: AVContentKeySession, didProvide keyRequest: AVContentKeyRequest) {
+        LCManager.shared.print("Content key did provide key request \(String(describing: keyRequest.identifier))")
         contentKeySession(session, process: keyRequest)
     }
 
     func contentKeySession(_ session: AVContentKeySession, didProvideRenewingContentKeyRequest keyRequest: AVContentKeyRequest) {
+        LCManager.shared.print("Content key did provide renewing content key request \(String(describing: keyRequest.identifier))")
         contentKeySession(session, process: keyRequest)
     }
 
@@ -102,6 +117,7 @@ extension ContentKeySessionManager: AVContentKeySessionDelegate {
             do {
                 let data = try await contentKeyContext(keyRequest: keyRequest)
                 let response = AVContentKeyResponse(fairPlayStreamingKeyResponseData: data)
+                await LCManager.shared.print("Successfully processed content key response")
                 keyRequest.processContentKeyResponse(response)
             }
             catch {
